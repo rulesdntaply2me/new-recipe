@@ -53,9 +53,9 @@ const BRAND = {
   appName: "Sclass Recipe Vault",
   tag: "Luxury performance recipes",
   logos: {
-    main: "/logo-main.svg",
-    mark: "/logo-mark.svg",
-    online: "/logo-online.svg",
+    main: "/logo-main.png",
+    mark: "/logo-mark.png",
+    online: "/logo-online.png",
   },
 };
 
@@ -117,14 +117,6 @@ const flavorPacks: Record<string, Record<string, Ingredient[]>> = {
     "Cheesecake Supreme": [["pudding mix sugar-free cheesecake", 10]],
     "Choco PB Dream": [["cocoa powder", 8], ["pb2", 12]],
   },
-};
-
-const packDescriptions: Record<string, string> = {
-  "All Packs": "All flavor packs combined in one live browser.",
-  "Gym Pack": "Simple high-protein staples for daily builds.",
-  "Dessert Pack": "Sweet bakery-style flavors and dessert builds.",
-  "Cereal Pack": "Crunchy cereal-inspired options and cinnamon profiles.",
-  "Luxury Pack": "Premium cheesecake, Biscoff, and rich hybrid flavors.",
 };
 
 
@@ -1056,7 +1048,7 @@ function exportBrandedHTML(
     </head>
     <body>
       <div class="wrap">
-        <div style="text-align:center;margin-bottom:18px;"><img src="${window.location.origin}/logo-main.svg" alt="Sclass Fitness" style="height:64px;max-width:100%;object-fit:contain;background:transparent;" /></div>
+        <div style="text-align:center;margin-bottom:18px;"><img src="${window.location.origin}/logo-main.png" alt="Sclass Fitness" style="height:64px;max-width:100%;object-fit:contain;" /></div>
         <h1>${title}</h1>
         <div class="small">${BRAND.name} • ${goal}</div>
 
@@ -1290,61 +1282,29 @@ export default function SclassRecipeAppFinal() {
 
     return recipes.filter((r) => {
       const categoryMatch = category === "All" || r.category === category;
-      if (!categoryMatch) return false;
-      if (!q) return true;
-
-      const activePackFlavors = pack === "All Packs"
-        ? Object.keys(allPackFlavors)
-        : Object.keys(flavorPacks[pack] || {});
+      if (!q) return categoryMatch;
 
       const searchableTerms = [
         r.name,
         r.clientName,
         r.category,
-        ...r.method,
         ...Object.keys(r.flavors),
         ...Object.keys(r.swirls),
         ...Object.keys(r.toppings),
         ...Object.keys(commonFlavors),
         ...Object.keys(commonSwirls),
         ...Object.keys(commonToppings),
-        pack,
-        ...activePackFlavors,
-      ]
-        .join(" ")
-        .toLowerCase();
+        ...Object.keys(allPackFlavors),
+        ...Object.keys(flavorPacks),
+      ].map((x) => x.toLowerCase());
 
-      return searchableTerms.includes(q);
+      const textMatch = searchableTerms.some((term) => term.includes(q));
+      return categoryMatch && textMatch;
     });
-  }, [category, query, pack]);
+  }, [category, query]);
 
   const categories = ["All", ...Array.from(new Set(recipes.map((r) => r.category)))];
   const packOptions = ["All Packs", ...Object.keys(flavorPacks)];
-
-  const packGroups = useMemo(() => {
-    const baseGroups =
-      pack === "All Packs"
-        ? Object.entries(flavorPacks).map(([packName, flavors]) => ({
-            packName,
-            flavorNames: Object.keys(flavors),
-          }))
-        : [{
-            packName: pack,
-            flavorNames: Object.keys(flavorPacks[pack] || {}),
-          }];
-
-    const q = query.trim().toLowerCase();
-    return baseGroups
-      .map((group) => ({
-        ...group,
-        flavorNames: q
-          ? group.flavorNames.filter((name) => name.toLowerCase().includes(q) || group.packName.toLowerCase().includes(q))
-          : group.flavorNames,
-      }))
-      .filter((group) => group.flavorNames.length > 0 || !q);
-  }, [pack, query]);
-
-  const activePackFlavorNames = packGroups.flatMap((group) => group.flavorNames);
 
   return (
     <div className="relative min-h-screen bg-neutral-950 text-white">
@@ -1476,68 +1436,6 @@ export default function SclassRecipeAppFinal() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mt-6">
-          <div className="rounded-3xl border border-yellow-700/25 bg-neutral-900/80 p-5 sm:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="text-[11px] uppercase tracking-[0.35em] text-yellow-500">Hybrid Builder</div>
-                <h2 className="mt-2 text-xl font-semibold text-yellow-300 sm:text-2xl">
-                  {pack === "All Packs" ? "All pack flavors combined" : `${pack} flavors loaded`}
-                </h2>
-                <p className="mt-2 text-sm text-neutral-400 sm:text-base">
-                  Search now filters the live builder, and the selected pack shows every included flavor right here.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-yellow-700/20 bg-black/30 px-4 py-3 text-sm text-neutral-300">
-                <span className="font-semibold text-yellow-300">{activePackFlavorNames.length}</span> flavor options in view
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {packOptions.map((packOption) => (
-                <button
-                  key={packOption}
-                  type="button"
-                  onClick={() => setPack(packOption)}
-                  className={`rounded-full border px-3 py-2 text-sm transition ${
-                    pack === packOption
-                      ? "border-yellow-500 bg-yellow-500/20 text-yellow-200"
-                      : "border-yellow-700/20 bg-black/25 text-neutral-300 hover:border-yellow-600/40 hover:text-white"
-                  }`}
-                >
-                  {packOption}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              {packGroups.map((group) => (
-                <div key={group.packName} className="rounded-2xl border border-yellow-700/20 bg-black/25 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold text-yellow-300">{group.packName}</div>
-                      <div className="mt-1 text-xs text-neutral-400">
-                        {packDescriptions[group.packName] || "Selected flavor pack."}
-                      </div>
-                    </div>
-                    <div className="rounded-full border border-yellow-700/20 bg-yellow-500/10 px-3 py-1 text-xs text-yellow-200">
-                      {group.flavorNames.length} flavors
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {group.flavorNames.map((flavorName) => (
-                      <span key={flavorName} className="rounded-full border border-yellow-700/25 bg-yellow-500/10 px-3 py-1.5 text-xs font-medium text-yellow-200 sm:text-sm">
-                        {flavorName}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
         <div className={`mt-6 grid gap-6 ${clientMode ? "grid-cols-1" : "grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(290px,1fr)]"}`}>
           <div className="space-y-6">
             {filteredRecipes.map((recipe, idx) => (
@@ -1547,7 +1445,6 @@ export default function SclassRecipeAppFinal() {
                 goal={goal}
                 pack={pack}
                 proteinMode={proteinMode}
-                query={query}
                 index={idx}
                 clientMode={clientMode}
                 savedBuilds={savedBuilds}
@@ -1612,7 +1509,6 @@ function RecipeCard({
   goal,
   pack,
   proteinMode,
-  query,
   index,
   clientMode,
   savedBuilds,
@@ -1622,7 +1518,6 @@ function RecipeCard({
   goal: Goal;
   pack: string;
   proteinMode: ProteinMode;
-  query: string;
   index: number;
   clientMode: boolean;
   savedBuilds: SavedBuild[];
@@ -1663,38 +1558,23 @@ function RecipeCard({
     ...Object.fromEntries(Object.entries(commonToppings).map(([k, v]) => [k, scaleItems(v, factor)])),
   };
 
-  const allFlavorKeys = Object.keys(mergedFlavors);
-  const allSwirlKeys = Object.keys(mergedSwirls);
-  const allToppingKeys = Object.keys(mergedToppings);
+  const flavorKeys = Object.keys(mergedFlavors);
+  const swirlKeys = Object.keys(mergedSwirls);
+  const toppingKeys = Object.keys(mergedToppings);
 
-  const q = query.trim().toLowerCase();
-  const flavorKeys = q
-    ? allFlavorKeys.filter((name) => name.toLowerCase().includes(q))
-    : allFlavorKeys;
-  const swirlKeys = q
-    ? allSwirlKeys.filter((name) => name.toLowerCase().includes(q))
-    : allSwirlKeys;
-  const toppingKeys = q
-    ? allToppingKeys.filter((name) => name.toLowerCase().includes(q))
-    : allToppingKeys;
-
-  const visibleFlavorKeys = flavorKeys.length ? flavorKeys : allFlavorKeys;
-  const visibleSwirlKeys = swirlKeys.length ? swirlKeys : allSwirlKeys;
-  const visibleToppingKeys = toppingKeys.length ? toppingKeys : allToppingKeys;
-
-  const [flavor, setFlavor] = useState(visibleFlavorKeys[0]);
-  const [swirl, setSwirl] = useState(visibleSwirlKeys[0]);
-  const [topping, setTopping] = useState(visibleToppingKeys[0]);
+  const [flavor, setFlavor] = useState(flavorKeys[0]);
+  const [swirl, setSwirl] = useState(swirlKeys[0]);
+  const [topping, setTopping] = useState(toppingKeys[0]);
   const [saveName, setSaveName] = useState("");
 
   useEffect(() => {
-    if (!visibleFlavorKeys.includes(flavor)) setFlavor(visibleFlavorKeys[0]);
-  }, [pack, goal, query]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!flavorKeys.includes(flavor)) setFlavor(flavorKeys[0]);
+  }, [pack, goal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!visibleSwirlKeys.includes(swirl)) setSwirl(visibleSwirlKeys[0]);
-    if (!visibleToppingKeys.includes(topping)) setTopping(visibleToppingKeys[0]);
-  }, [goal, query]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!swirlKeys.includes(swirl)) setSwirl(swirlKeys[0]);
+    if (!toppingKeys.includes(topping)) setTopping(toppingKeys[0]);
+  }, [goal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let flavorList = mergedFlavors[flavor] || [];
   const swirlList = mergedSwirls[swirl] || [];
@@ -1795,9 +1675,9 @@ function RecipeCard({
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <AppSelect value={flavor} onChange={(e) => setFlavor(e.target.value)} options={visibleFlavorKeys} />
-              <AppSelect value={swirl} onChange={(e) => setSwirl(e.target.value)} options={visibleSwirlKeys} />
-              <AppSelect value={topping} onChange={(e) => setTopping(e.target.value)} options={visibleToppingKeys} />
+              <AppSelect value={flavor} onChange={(e) => setFlavor(e.target.value)} options={flavorKeys} />
+              <AppSelect value={swirl} onChange={(e) => setSwirl(e.target.value)} options={swirlKeys} />
+              <AppSelect value={topping} onChange={(e) => setTopping(e.target.value)} options={toppingKeys} />
             </div>
           </div>
         </div>
